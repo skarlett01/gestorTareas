@@ -12,35 +12,40 @@
         android:id="@+id/editTextTaskName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Nombre de la tarea"
+        android:hint="Nombre de la tarea (Obligatorio)"
         android:inputType="textCapWords"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.081" />
 
     <EditText
         android:id="@+id/editTextTaskDescription"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="328dp"
+        android:layout_height="490dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:hint="Descripción de la tarea"
         android:gravity="top"
+        android:hint="Descripción de la tarea (Opcional)"
         android:inputType="textMultiLine"
-        app:layout_constraintTop_toBottomOf="@id/editTextTaskName"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/buttonSaveTask"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/buttonSaveTask"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editTextTaskName" />
 
     <Button
         android:id="@+id/buttonCancelTask"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="48dp"
         android:text="Cancelar"
         app:backgroundTint="@android:color/holo_red_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
@@ -48,9 +53,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="48dp"
         android:text="Guardar Tarea"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/guideline" />
 
     <androidx.constraintlayout.widget.Guideline
@@ -59,5 +66,18 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5"/>
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crear Tarea"
+        android:textSize="65px"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.016" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

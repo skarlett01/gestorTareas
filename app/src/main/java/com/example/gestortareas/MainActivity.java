@@ -1,19 +1,36 @@
 package com.example.gestortareas;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int CREATE_TASK_REQUEST = 1;
     private ArrayList<String> tasks;
     private ArrayAdapter<String> tasksAdapter;
     private ListView listViewTasks;
     private Button buttonAddTask;
+
+    private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Intent data = result.getData();
+                    String taskName = data.getStringExtra("taskName");
+                    String taskDescription = data.getStringExtra("taskDescription");
+                    if (taskName != null) {
+                        tasks.add(taskName + ": " + taskDescription);
+                        tasksAdapter.notifyDataSetChanged();
+                    }
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,25 +44,9 @@ public class MainActivity extends AppCompatActivity {
         tasksAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, tasks);
         listViewTasks.setAdapter(tasksAdapter);
 
-        buttonAddTask.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, PantallaCrearTarea.class);
-                startActivityForResult(intent, CREATE_TASK_REQUEST);
-            }
+        buttonAddTask.setOnClickListener(v -> {
+            Intent createTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
+            createTaskLauncher.launch(createTaskIntent);
         });
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CREATE_TASK_REQUEST && resultCode == RESULT_OK && data != null) {
-            String taskName = data.getStringExtra("taskName");
-            String taskDescription = data.getStringExtra("taskDescription");
-            if (taskName != null) {
-                tasks.add(taskName + ": " + taskDescription);
-                tasksAdapter.notifyDataSetChanged();
-            }
-        }
     }
 }
