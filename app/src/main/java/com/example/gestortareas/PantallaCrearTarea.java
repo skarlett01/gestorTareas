@@ -11,11 +11,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class PantallaCrearTarea extends AppCompatActivity {
 
+    // Logica para crear tarea privates
     private EditText editTextTaskName;
     private EditText editTextTaskDescription;
     private Button buttonSaveTask;
     private Button buttonCancelTask;
 
+    // Logica con findViewById para crear tarea
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

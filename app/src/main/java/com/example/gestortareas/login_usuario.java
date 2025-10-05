@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class login_usuario extends AppCompatActivity {
 
+    //Logica de inicio de sesion de usuario
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    // Logica para redirigir a la pantalla de crear tarea
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
