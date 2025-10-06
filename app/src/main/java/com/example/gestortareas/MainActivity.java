@@ -2,10 +2,16 @@ package com.example.gestortareas;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckedTextView;
 import android.widget.ListView;
+import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
                     String taskName = data.getStringExtra("taskName");
                     String taskDescription = data.getStringExtra("taskDescription");
                     if (taskName != null) {
-                        tasks.add(taskName + ": " + taskDescription);
+                        tasks.add("[Pendiente] " + taskName + ": " + taskDescription);
                         tasksAdapter.notifyDataSetChanged();
                     }
                 }
@@ -42,8 +48,28 @@ public class MainActivity extends AppCompatActivity {
         listViewTasks = findViewById(R.id.listViewTasks);
         buttonAddTask = findViewById(R.id.buttonAddTask);
 
-        tasksAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, tasks);
+        tasksAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_multiple_choice, tasks) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                CheckedTextView textView = (CheckedTextView) view;
+                textView.setTextColor(Color.BLACK);
+                textView.setCheckMarkTintList(ColorStateList.valueOf(Color.YELLOW));
+                return view;
+            }
+        };
         listViewTasks.setAdapter(tasksAdapter);
+        listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+        listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
+            String task = tasks.get(position);
+            if (task.startsWith("[Pendiente]")) {
+                tasks.set(position, task.replace("[Pendiente]", "[Completada]"));
+            } else {
+                tasks.set(position, task.replace("[Completada]", "[Pendiente]"));
+            }
+            tasksAdapter.notifyDataSetChanged();
+        });
 
         buttonAddTask.setOnClickListener(v -> {
             Intent createTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);

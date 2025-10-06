@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#add8e6"
     tools:context=".PantallaCrearTarea"
     android:padding="16dp">
 
@@ -14,6 +15,8 @@
         android:layout_height="39dp"
         android:hint="Nombre de la tarea (Obligatorio)"
         android:inputType="textCapWords"
+        android:textColor="@android:color/black"
+        android:textColorHint="@android:color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -29,10 +32,12 @@
         android:gravity="top"
         android:hint="Descripción de la tarea (Opcional)"
         android:inputType="textMultiLine"
+        android:textColor="@android:color/black"
+        android:textColorHint="@android:color/black"
         app:layout_constraintBottom_toTopOf="@+id/buttonSaveTask"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/editTextTaskName" />
+        app:layout_constraintTop_toBottomOf="@+id/editTextTaskName" />
 
     <Button
         android:id="@+id/buttonCancelTask"
@@ -41,6 +46,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="48dp"
         android:text="Cancelar"
+        android:textColor="@android:color/black"
         app:backgroundTint="@android:color/holo_red_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
@@ -54,6 +60,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginBottom="48dp"
         android:text="Guardar Tarea"
+        android:textColor="@android:color/black"
+        app:backgroundTint="@android:color/holo_green_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
@@ -71,6 +79,7 @@
         android:layout_width="214dp"
         android:layout_height="29dp"
         android:text="Crear Nueva Tarea"
+        android:textColor="@android:color/black"
         android:textSize="65px"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
