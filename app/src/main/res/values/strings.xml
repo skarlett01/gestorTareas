@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">gestorTareas</string>
+    <string name="task_name_hint">Nombre de la tarea</string>
+    <string name="task_description_hint">Descripción de la tarea</string>
+    <string name="cancel_button_text">Cancelar</string>
+    <string name="save_task_button_text">Guardar Tarea</string>
+    <string name="rut_hint">RUT</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="login_button_text">Iniciar Sesión</string>
+    <string name="login_title">Inicio de Sesión</string>
+    <string name="name_hint">Nombre</string>
+    <string name="email_hint">Correo Electrónico</string>
 </resources>
