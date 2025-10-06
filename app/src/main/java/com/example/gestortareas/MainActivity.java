@@ -1,24 +1,79 @@
 package com.example.gestortareas;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckedTextView;
+import android.widget.ListView;
+import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    private ArrayList<String> tasks;
+    private ArrayAdapter<String> tasksAdapter;
+    private ListView listViewTasks;
+    private Button buttonAddTask;
+
+    private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Intent data = result.getData();
+                    String taskName = data.getStringExtra("taskName");
+                    String taskDescription = data.getStringExtra("taskDescription");
+                    if (taskName != null) {
+                        tasks.add("[Pendiente] " + taskName + ": " + taskDescription);
+                        tasksAdapter.notifyDataSetChanged();
+                    }
+                }
+            });
+
+    // Logica para redirigir a la pantalla de crear tarea
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+        tasks = new ArrayList<>();
+        listViewTasks = findViewById(R.id.listViewTasks);
+        buttonAddTask = findViewById(R.id.buttonAddTask);
+
+        tasksAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_multiple_choice, tasks) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                CheckedTextView textView = (CheckedTextView) view;
+                textView.setTextColor(Color.BLACK);
+                textView.setCheckMarkTintList(ColorStateList.valueOf(Color.YELLOW));
+                return view;
+            }
+        };
+        listViewTasks.setAdapter(tasksAdapter);
+        listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+        listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
+            String task = tasks.get(position);
+            if (task.startsWith("[Pendiente]")) {
+                tasks.set(position, task.replace("[Pendiente]", "[Completada]"));
+            } else {
+                tasks.set(position, task.replace("[Completada]", "[Pendiente]"));
+            }
+            tasksAdapter.notifyDataSetChanged();
+        });
+
+        buttonAddTask.setOnClickListener(v -> {
+            Intent createTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
+            createTaskLauncher.launch(createTaskIntent);
         });
     }
 }
