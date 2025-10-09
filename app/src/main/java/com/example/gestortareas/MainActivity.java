@@ -75,5 +75,7 @@ public class MainActivity extends AppCompatActivity {
             Intent createTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
             createTaskLauncher.launch(createTaskIntent);
         });
+
+        // Logica para redirigir a la pantalla de login
     }
 }
