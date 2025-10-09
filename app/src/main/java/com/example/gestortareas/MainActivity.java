@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.List;
 
+// Importaciones necesarias
 import Data.DBHelper;
 import Data.TareaContract;
 
@@ -93,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         loadTasks();
     }
 
+    // Cargar tareas desde la base de datos
     private void loadTasks() {
         tasksBundle = dbHelper.getTareasByUser(userId);
         tasks.clear();
