@@ -41,7 +41,7 @@
         android:layout_marginTop="16dp"
         android:text="Agregar"
         android:textColor="@android:color/black"
-        app:backgroundTint="@android:color/holo_orange_light"
+        app:backgroundTint="@android:color/holo_purple"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"

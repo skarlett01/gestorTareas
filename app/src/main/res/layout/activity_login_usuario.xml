@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#8b0000"
+    android:background="@color/purple"
     android:padding="16dp"
     tools:context=".login_usuario">
 
@@ -43,8 +43,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="80dp"
         android:text="@string/login_button_text"
-        android:textColor="@android:color/black"
-        app:backgroundTint="#FFD700"
+        android:textColor="@android:color/white"
+        app:backgroundTint="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
