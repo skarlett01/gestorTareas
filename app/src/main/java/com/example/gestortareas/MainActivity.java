@@ -16,6 +16,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
+import java.util.List;
+
+import Data.DBHelper;
+import Data.TareaContract;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
     private ArrayAdapter<String> tasksAdapter;
     private ListView listViewTasks;
     private Button buttonAddTask;
+    private DBHelper dbHelper;
+    private int userId = 1; // ID de usuario harcodeado
+    private List<Bundle> tasksBundle;
 
     private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -32,18 +39,18 @@ public class MainActivity extends AppCompatActivity {
                     String taskName = data.getStringExtra("taskName");
                     String taskDescription = data.getStringExtra("taskDescription");
                     if (taskName != null) {
-                        tasks.add("[Pendiente] " + taskName + ": " + taskDescription);
-                        tasksAdapter.notifyDataSetChanged();
+                        dbHelper.crearTarea(taskName, taskDescription, userId);
+                        loadTasks();
                     }
                 }
             });
 
-    // Logica para redirigir a la pantalla de crear tarea
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        dbHelper = new DBHelper(this);
         tasks = new ArrayList<>();
         listViewTasks = findViewById(R.id.listViewTasks);
         buttonAddTask = findViewById(R.id.buttonAddTask);
@@ -54,7 +61,16 @@ public class MainActivity extends AppCompatActivity {
                 View view = super.getView(position, convertView, parent);
                 CheckedTextView textView = (CheckedTextView) view;
                 textView.setTextColor(Color.BLACK);
-                textView.setCheckMarkTintList(ColorStateList.valueOf(Color.YELLOW));
+
+                Bundle taskBundle = tasksBundle.get(position);
+                boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
+                listViewTasks.setItemChecked(position, isCompleted);
+                if(isCompleted) {
+                    textView.setCheckMarkTintList(ColorStateList.valueOf(Color.GREEN));
+                }else {
+                    textView.setCheckMarkTintList(ColorStateList.valueOf(Color.YELLOW));
+                }
+
                 return view;
             }
         };
@@ -62,13 +78,11 @@ public class MainActivity extends AppCompatActivity {
         listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
         listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
-            String task = tasks.get(position);
-            if (task.startsWith("[Pendiente]")) {
-                tasks.set(position, task.replace("[Pendiente]", "[Completada]"));
-            } else {
-                tasks.set(position, task.replace("[Completada]", "[Pendiente]"));
-            }
-            tasksAdapter.notifyDataSetChanged();
+            Bundle taskBundle = tasksBundle.get(position);
+            int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
+            boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
+            dbHelper.actualizarEstadoTarea(taskId, !isCompleted);
+            loadTasks();
         });
 
         buttonAddTask.setOnClickListener(v -> {
@@ -76,6 +90,19 @@ public class MainActivity extends AppCompatActivity {
             createTaskLauncher.launch(createTaskIntent);
         });
 
-        // Logica para redirigir a la pantalla de login
+        loadTasks();
+    }
+
+    private void loadTasks() {
+        tasksBundle = dbHelper.getTareasByUser(userId);
+        tasks.clear();
+        for (Bundle bundle : tasksBundle) {
+            String title = bundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
+            String description = bundle.getString(TareaContract.TareaEntry.COLUMN_DESCRIPCION);
+            int status = bundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO);
+            String statusText = status == 2 ? "[Completada]" : "[Pendiente]";
+            tasks.add(statusText + " " + title + ": " + description);
+        }
+        tasksAdapter.notifyDataSetChanged();
     }
 }
