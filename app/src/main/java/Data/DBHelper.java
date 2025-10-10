@@ -89,6 +89,11 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.update(TareaContract.TareaEntry.TABLE_TAREA, values, TareaContract.TareaEntry.COLUMN_ID + " = ?", new String[]{String.valueOf(idTarea)});
     }
 
+    public void eliminarTarea(int idTarea) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TareaContract.TareaEntry.TABLE_TAREA, TareaContract.TareaEntry.COLUMN_ID + " = ?", new String[]{String.valueOf(idTarea)});
+    }
+
     public List<Bundle> getTareasByUser(int idUsuario) {
         List<Bundle> taskList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();

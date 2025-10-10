@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private ListView listViewTasks;
     private Button buttonAddTask;
     private Button buttonModifyTask;
+    private Button buttonDeleteTask;
     private DBHelper dbHelper;
     private int userId = 1; // ID de usuario harcodeado
     private List<Bundle> tasksBundle;
@@ -73,13 +74,14 @@ public class MainActivity extends AppCompatActivity {
         listViewTasks = findViewById(R.id.listViewTasks);
         buttonAddTask = findViewById(R.id.buttonAddTask);
         buttonModifyTask = findViewById(R.id.buttonModifyTask);
+        buttonDeleteTask = findViewById(R.id.buttonDeleteTask);
 
         tasksAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_multiple_choice, tasks) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 CheckedTextView textView = (CheckedTextView) view;
-                textView.setTextColor(Color.BLACK);
+                textView.setTextColor(Color.WHITE);
 
                 Bundle taskBundle = tasksBundle.get(position);
                 boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
@@ -134,6 +136,29 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Selecciona una tarea para modificar", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(MainActivity.this, "Selecciona solo una tarea para modificar", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        buttonDeleteTask.setOnClickListener(v -> {
+            SparseBooleanArray checked = listViewTasks.getCheckedItemPositions();
+            ArrayList<Integer> selectedPositions = new ArrayList<>();
+            for (int i = 0; i < checked.size(); i++) {
+                int key = checked.keyAt(i);
+                if (checked.get(key)) {
+                    selectedPositions.add(key);
+                }
+            }
+
+            if (selectedPositions.size() > 0) {
+                for (int position : selectedPositions) {
+                    Bundle taskBundle = tasksBundle.get(position);
+                    int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
+                    dbHelper.eliminarTarea(taskId);
+                }
+                loadTasks();
+                Toast.makeText(MainActivity.this, "Tareas eliminadas", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(MainActivity.this, "Selecciona una o más tareas para eliminar", Toast.LENGTH_SHORT).show();
             }
         });
 
