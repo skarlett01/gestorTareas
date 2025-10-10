@@ -81,6 +81,14 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.update(TareaContract.TareaEntry.TABLE_TAREA, values, TareaContract.TareaEntry.COLUMN_ID + " = ?", new String[]{String.valueOf(idTarea)});
     }
 
+    public int actualizarTarea(int idTarea, String titulo, String descripcion) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(TareaContract.TareaEntry.COLUMN_TITULO, titulo);
+        values.put(TareaContract.TareaEntry.COLUMN_DESCRIPCION, descripcion);
+        return db.update(TareaContract.TareaEntry.TABLE_TAREA, values, TareaContract.TareaEntry.COLUMN_ID + " = ?", new String[]{String.valueOf(idTarea)});
+    }
+
     public List<Bundle> getTareasByUser(int idUsuario) {
         List<Bundle> taskList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();

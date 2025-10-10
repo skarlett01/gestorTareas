@@ -11,13 +11,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class PantallaCrearTarea extends AppCompatActivity {
 
-    // Logica para crear tarea privates
     private EditText editTextTaskName;
     private EditText editTextTaskDescription;
     private Button buttonSaveTask;
     private Button buttonCancelTask;
+    private int taskId = -1;
 
-    // Logica con findViewById para crear tarea
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +26,15 @@ public class PantallaCrearTarea extends AppCompatActivity {
         editTextTaskDescription = findViewById(R.id.editTextTaskDescription);
         buttonSaveTask = findViewById(R.id.buttonSaveTask);
         buttonCancelTask = findViewById(R.id.buttonCancelTask);
+
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("taskId")) {
+            taskId = intent.getIntExtra("taskId", -1);
+            String taskName = intent.getStringExtra("taskName");
+            String taskDescription = intent.getStringExtra("taskDescription");
+            editTextTaskName.setText(taskName);
+            editTextTaskDescription.setText(taskDescription);
+        }
 
         buttonSaveTask.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -38,6 +46,9 @@ public class PantallaCrearTarea extends AppCompatActivity {
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("taskName", taskName);
                     resultIntent.putExtra("taskDescription", taskDescription);
+                    if (taskId != -1) {
+                        resultIntent.putExtra("taskId", taskId);
+                    }
                     setResult(Activity.RESULT_OK, resultIntent);
                     finish();
                 }
