@@ -126,6 +126,7 @@
         android:text="O continua sin registrarte"
         android:textColor="@android:color/black"
         android:textSize="24sp"
+        android:textStyle="bold|italic"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
