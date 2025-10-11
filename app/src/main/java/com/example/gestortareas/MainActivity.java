@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonModifyTask;
     private Button buttonDeleteTask;
     private DBHelper dbHelper;
-    private int userId = 1; // ID de usuario harcodeado
+    private int userId = 1; // ID de usuario que esta asociado con las tareas
     private List<Bundle> tasksBundle;
 
     private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
