@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 CheckedTextView textView = (CheckedTextView) view;
-                textView.setTextColor(Color.WHITE);
+                textView.setTextColor(Color.BLACK);
 
                 Bundle taskBundle = tasksBundle.get(position);
                 boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
