@@ -24,6 +24,9 @@
             android:name=".PantallaCrearTarea"
             android:exported="false" />
         <activity
+            android:name=".ModificarTarea"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="false" />
     </application>
