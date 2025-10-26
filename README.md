@@ -62,7 +62,7 @@ Configurar un Emulador de Android (AVD) (se recomienda API 36) o tener un dispos
 
 2. Clonar el Repositorio:
 
-git clone [https://github.com/TU_USUARIO/TU_REPOSITORIO.git](https://github.com/TU_USUARIO/TU_REPOSITORIO.git)
+git clone (https://github.com/skarlett01/gestorTareas)
 
 
 3. Abrir el Proyecto:
