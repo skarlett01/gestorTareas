@@ -7,9 +7,9 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.SparseBooleanArray;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckedTextView;
@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonModifyTask;
     private Button buttonDeleteTask;
     private DBHelper dbHelper;
-    private int userId = 1; // ID de usuario que esta asociado con las tareas
+    private int userId = 1;
 
     private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -44,8 +45,9 @@ public class MainActivity extends AppCompatActivity {
                     Intent data = result.getData();
                     String taskName = data.getStringExtra("taskName");
                     String taskDescription = data.getStringExtra("taskDescription");
+                    String audioPath = data.getStringExtra("audioPath");
                     if (taskName != null) {
-                        dbHelper.crearTarea(taskName, taskDescription, userId);
+                        dbHelper.crearTarea(taskName, taskDescription, userId, audioPath);
                         loadTasks();
                     }
                 }
@@ -59,8 +61,9 @@ public class MainActivity extends AppCompatActivity {
                     int taskId = data.getIntExtra("taskId", -1);
                     String taskName = data.getStringExtra("taskName");
                     String taskDescription = data.getStringExtra("taskDescription");
+                    String audioPath = data.getStringExtra("audioPath");
                     if (taskId != -1 && taskName != null) {
-                        dbHelper.actualizarTarea(taskId, taskName, taskDescription);
+                        dbHelper.actualizarTarea(taskId, taskName, taskDescription, audioPath);
                         loadTasks();
                     }
                 }
@@ -77,19 +80,20 @@ public class MainActivity extends AppCompatActivity {
         buttonModifyTask = findViewById(R.id.buttonModifyTask);
         buttonDeleteTask = findViewById(R.id.buttonDeleteTask);
 
-        // Set up the adapter with an empty list to start.
         tasksAdapter = new TareaAdapter(this, new ArrayList<>());
         listViewTasks.setAdapter(tasksAdapter);
         listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
-        listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
+        listViewTasks.setOnItemLongClickListener((parent, view, position, id) -> {
             Bundle taskBundle = tasksAdapter.getItem(position);
             if (taskBundle != null) {
                 int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                 boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
                 dbHelper.actualizarEstadoTarea(taskId, !isCompleted);
                 loadTasks();
+                return true;
             }
+            return false;
         });
 
         buttonAddTask.setOnClickListener(v -> {
@@ -113,11 +117,13 @@ public class MainActivity extends AppCompatActivity {
                     int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                     String taskTitle = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
                     String taskDescription = taskBundle.getString(TareaContract.TareaEntry.COLUMN_DESCRIPCION);
+                    String audioPath = taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
 
-                    Intent editTaskIntent = new Intent(MainActivity.this, ModificarTarea.class);
+                    Intent editTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
                     editTaskIntent.putExtra("taskId", taskId);
                     editTaskIntent.putExtra("taskName", taskTitle);
                     editTaskIntent.putExtra("taskDescription", taskDescription);
+                    editTaskIntent.putExtra("audioPath", audioPath);
                     editTaskLauncher.launch(editTaskIntent);
                 }
             } else if (selectedPositions.isEmpty()) {
@@ -143,7 +149,16 @@ public class MainActivity extends AppCompatActivity {
             if (!tasksToDelete.isEmpty()) {
                 for (Bundle taskBundle : tasksToDelete) {
                     int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
+                    String audioPath = taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
+
                     dbHelper.eliminarTarea(taskId);
+
+                    if (audioPath != null && !audioPath.isEmpty()) {
+                        File audioFile = new File(audioPath);
+                        if (audioFile.exists()) {
+                            audioFile.delete();
+                        }
+                    }
                 }
                 loadTasks();
                 Toast.makeText(MainActivity.this, "Tareas eliminadas", Toast.LENGTH_SHORT).show();
@@ -159,30 +174,20 @@ public class MainActivity extends AppCompatActivity {
         List<Bundle> newTasks = dbHelper.getTareasByUser(userId);
         tasksAdapter.clear();
         tasksAdapter.addAll(newTasks);
-
-        // After updating adapter, re-check the completed items
-        for (int i = 0; i < tasksAdapter.getCount(); i++) {
-            Bundle bundle = tasksAdapter.getItem(i);
-            if (bundle != null) {
-                boolean isCompleted = bundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
-                listViewTasks.setItemChecked(i, isCompleted);
-            }
-        }
+        listViewTasks.clearChoices();
     }
 
-    // Custom Adapter class for better data handling
-    public static class TareaAdapter extends ArrayAdapter<Bundle> {
+    public class TareaAdapter extends ArrayAdapter<Bundle> {
 
         public TareaAdapter(Context context, List<Bundle> tasks) {
-            super(context, android.R.layout.simple_list_item_multiple_choice, tasks);
+            super(context, R.layout.list_item_tarea, R.id.checkedTextView, tasks);
         }
 
         @NonNull
         @Override
         public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-            // Get the standard checked text view
             View view = super.getView(position, convertView, parent);
-            CheckedTextView textView = (CheckedTextView) view;
+            CheckedTextView textView = view.findViewById(R.id.checkedTextView);
 
             Bundle taskBundle = getItem(position);
 
@@ -193,8 +198,12 @@ public class MainActivity extends AppCompatActivity {
                 boolean isCompleted = (status == 2);
                 String statusText = isCompleted ? "[Completada]" : "[Pendiente]";
 
-                textView.setText(String.format("%s %s: %s", statusText, title, description));
-                textView.setTextColor(Color.BLACK);
+                String taskText = title;
+                if (description != null && !description.isEmpty()) {
+                    taskText += ": " + description;
+                }
+
+                textView.setText(String.format("%s %s", statusText, taskText));
 
                 if (isCompleted) {
                     textView.setCheckMarkTintList(ColorStateList.valueOf(Color.GREEN));
@@ -203,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            return textView;
+            return view;
         }
     }
 }

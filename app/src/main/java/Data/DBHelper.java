@@ -13,7 +13,7 @@ import java.util.List;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "tareas.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     private static final String CREATE_TABLE_ESTADO_TAREA = "create table " + TareaContract.EstadoTareaEntry.TABLE_ESTADO_TAREA + "("
             + TareaContract.EstadoTareaEntry.COLUMN_ID_ESTADO + " integer primary key autoincrement, "
@@ -33,6 +33,7 @@ public class DBHelper extends SQLiteOpenHelper {
             + TareaContract.TareaEntry.COLUMN_DESCRIPCION + " text not null, "
             + TareaContract.TareaEntry.COLUMN_ID_ESTADO + " integer, "
             + TareaContract.TareaEntry.COLUMN_ID_USUARIO + " integer, "
+            + TareaContract.TareaEntry.COLUMN_AUDIO_PATH + " text, "
             + "FOREIGN KEY(" + TareaContract.TareaEntry.COLUMN_ID_ESTADO + ") REFERENCES " + TareaContract.EstadoTareaEntry.TABLE_ESTADO_TAREA + "(" + TareaContract.EstadoTareaEntry.COLUMN_ID_ESTADO + "), "
             + "FOREIGN KEY(" + TareaContract.TareaEntry.COLUMN_ID_USUARIO + ") REFERENCES " + TareaContract.UsuarioEntry.TABLE_USUARIO + "(" + TareaContract.UsuarioEntry.COLUMN_ID_USUARIO + "));";
 
@@ -49,10 +50,9 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TareaContract.TareaEntry.TABLE_TAREA);
-        db.execSQL("DROP TABLE IF EXISTS " + TareaContract.EstadoTareaEntry.TABLE_ESTADO_TAREA);
-        db.execSQL("DROP TABLE IF EXISTS " + TareaContract.UsuarioEntry.TABLE_USUARIO);
-        onCreate(db);
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + TareaContract.TareaEntry.TABLE_TAREA + " ADD COLUMN " + TareaContract.TareaEntry.COLUMN_AUDIO_PATH + " TEXT;");
+        }
     }
 
     public long crearUsuario(String nombre, String correo, String contrasena) {
@@ -64,13 +64,14 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.insert(TareaContract.UsuarioEntry.TABLE_USUARIO, null, values);
     }
 
-    public long crearTarea(String titulo, String descripcion, int idUsuario) {
+    public long crearTarea(String titulo, String descripcion, int idUsuario, String audioPath) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(TareaContract.TareaEntry.COLUMN_TITULO, titulo);
         values.put(TareaContract.TareaEntry.COLUMN_DESCRIPCION, descripcion);
         values.put(TareaContract.TareaEntry.COLUMN_ID_ESTADO, 1);
         values.put(TareaContract.TareaEntry.COLUMN_ID_USUARIO, idUsuario);
+        values.put(TareaContract.TareaEntry.COLUMN_AUDIO_PATH, audioPath);
         return db.insert(TareaContract.TareaEntry.TABLE_TAREA, null, values);
     }
 
@@ -81,11 +82,12 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.update(TareaContract.TareaEntry.TABLE_TAREA, values, TareaContract.TareaEntry.COLUMN_ID + " = ?", new String[]{String.valueOf(idTarea)});
     }
 
-    public int actualizarTarea(int idTarea, String titulo, String descripcion) {
+    public int actualizarTarea(int idTarea, String titulo, String descripcion, String audioPath) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(TareaContract.TareaEntry.COLUMN_TITULO, titulo);
         values.put(TareaContract.TareaEntry.COLUMN_DESCRIPCION, descripcion);
+        values.put(TareaContract.TareaEntry.COLUMN_AUDIO_PATH, audioPath);
         return db.update(TareaContract.TareaEntry.TABLE_TAREA, values, TareaContract.TareaEntry.COLUMN_ID + " = ?", new String[]{String.valueOf(idTarea)});
     }
 
@@ -98,7 +100,7 @@ public class DBHelper extends SQLiteOpenHelper {
         List<Bundle> taskList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         try (Cursor cursor = db.query(TareaContract.TareaEntry.TABLE_TAREA,
-                new String[]{TareaContract.TareaEntry.COLUMN_ID, TareaContract.TareaEntry.COLUMN_TITULO, TareaContract.TareaEntry.COLUMN_DESCRIPCION, TareaContract.TareaEntry.COLUMN_ID_ESTADO},
+                new String[]{TareaContract.TareaEntry.COLUMN_ID, TareaContract.TareaEntry.COLUMN_TITULO, TareaContract.TareaEntry.COLUMN_DESCRIPCION, TareaContract.TareaEntry.COLUMN_ID_ESTADO, TareaContract.TareaEntry.COLUMN_AUDIO_PATH},
                 TareaContract.TareaEntry.COLUMN_ID_USUARIO + " = ?",
                 new String[]{String.valueOf(idUsuario)}, null, null, null)) {
 
@@ -107,6 +109,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 int tituloCol = cursor.getColumnIndexOrThrow(TareaContract.TareaEntry.COLUMN_TITULO);
                 int descripcionCol = cursor.getColumnIndexOrThrow(TareaContract.TareaEntry.COLUMN_DESCRIPCION);
                 int estadoCol = cursor.getColumnIndexOrThrow(TareaContract.TareaEntry.COLUMN_ID_ESTADO);
+                int audioPathCol = cursor.getColumnIndexOrThrow(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
 
                 do {
                     Bundle taskBundle = new Bundle();
@@ -114,6 +117,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     taskBundle.putString(TareaContract.TareaEntry.COLUMN_TITULO, cursor.getString(tituloCol));
                     taskBundle.putString(TareaContract.TareaEntry.COLUMN_DESCRIPCION, cursor.getString(descripcionCol));
                     taskBundle.putInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO, cursor.getInt(estadoCol));
+                    taskBundle.putString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH, cursor.getString(audioPathCol));
                     taskList.add(taskBundle);
                 } while (cursor.moveToNext());
             }

@@ -12,6 +12,7 @@ public final class TareaContract {
         public static final String COLUMN_DESCRIPCION = "descripcion";
         public static final String COLUMN_ID_ESTADO = "id_estado";
         public static final String COLUMN_ID_USUARIO = "id_usuario";
+        public static final String COLUMN_AUDIO_PATH = "audio_path";
     }
 
     public static abstract class EstadoTareaEntry implements BaseColumns {
