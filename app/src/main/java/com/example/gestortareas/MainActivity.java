@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.util.SparseBooleanArray;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckedTextView;
@@ -24,11 +24,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import Data.DBHelper;
 import Data.TareaContract;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
 
     private TareaAdapter tasksAdapter;
     private ListView listViewTasks;
@@ -37,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonDeleteTask;
     private DBHelper dbHelper;
     private int userId = 1;
+    private TextToSpeech tts;
+    private boolean talkBackEnabled;
 
     private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -48,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
                     String audioPath = data.getStringExtra("audioPath");
                     if (taskName != null) {
                         dbHelper.crearTarea(taskName, taskDescription, userId, audioPath);
+                        if (talkBackEnabled && tts != null) {
+                            tts.speak("Tarea " + taskName + " creada.", TextToSpeech.QUEUE_ADD, null, null);
+                        }
                         loadTasks();
                     }
                 }
@@ -64,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
                     String audioPath = data.getStringExtra("audioPath");
                     if (taskId != -1 && taskName != null) {
                         dbHelper.actualizarTarea(taskId, taskName, taskDescription, audioPath);
+                        if (talkBackEnabled && tts != null) {
+                            tts.speak("Tarea " + taskName + " actualizada.", TextToSpeech.QUEUE_ADD, null, null);
+                        }
                         loadTasks();
                     }
                 }
@@ -73,6 +82,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        talkBackEnabled = getIntent().getBooleanExtra("talkBackEnabled", false);
+        if (talkBackEnabled) {
+            tts = new TextToSpeech(this, this);
+        }
 
         dbHelper = new DBHelper(this);
         listViewTasks = findViewById(R.id.listViewTasks);
@@ -84,12 +98,31 @@ public class MainActivity extends AppCompatActivity {
         listViewTasks.setAdapter(tasksAdapter);
         listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
+        listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
+            if (talkBackEnabled && tts != null) {
+                Bundle taskBundle = tasksAdapter.getItem(position);
+                if (taskBundle != null) {
+                    String taskTitle = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
+                    boolean isSelected = listViewTasks.isItemChecked(position);
+                    String selectionMessage = isSelected ? " seleccionada." : " deseleccionada.";
+                    tts.speak(taskTitle + selectionMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+                }
+            }
+        });
+
         listViewTasks.setOnItemLongClickListener((parent, view, position, id) -> {
             Bundle taskBundle = tasksAdapter.getItem(position);
             if (taskBundle != null) {
                 int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                 boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
                 dbHelper.actualizarEstadoTarea(taskId, !isCompleted);
+
+                if (talkBackEnabled && tts != null) {
+                    String statusMessage = !isCompleted ? " marcada como completada." : " marcada como pendiente.";
+                    String title = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
+                    tts.speak(title + statusMessage, TextToSpeech.QUEUE_FLUSH, null, null);
+                }
+
                 loadTasks();
                 return true;
             }
@@ -97,6 +130,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         buttonAddTask.setOnClickListener(v -> {
+            if (talkBackEnabled && tts != null) {
+                tts.speak("Abriendo pantalla para crear tarea", TextToSpeech.QUEUE_FLUSH, null, null);
+            }
             Intent createTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
             createTaskLauncher.launch(createTaskIntent);
         });
@@ -114,22 +150,24 @@ public class MainActivity extends AppCompatActivity {
                 int position = selectedPositions.get(0);
                 Bundle taskBundle = tasksAdapter.getItem(position);
                 if (taskBundle != null) {
-                    int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
-                    String taskTitle = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
-                    String taskDescription = taskBundle.getString(TareaContract.TareaEntry.COLUMN_DESCRIPCION);
-                    String audioPath = taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
-
+                    if (talkBackEnabled && tts != null) {
+                        tts.speak("Abriendo pantalla para modificar tarea", TextToSpeech.QUEUE_FLUSH, null, null);
+                    }
                     Intent editTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
-                    editTaskIntent.putExtra("taskId", taskId);
-                    editTaskIntent.putExtra("taskName", taskTitle);
-                    editTaskIntent.putExtra("taskDescription", taskDescription);
-                    editTaskIntent.putExtra("audioPath", audioPath);
+                    editTaskIntent.putExtra("taskId", taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID));
+                    editTaskIntent.putExtra("taskName", taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO));
+                    editTaskIntent.putExtra("taskDescription", taskBundle.getString(TareaContract.TareaEntry.COLUMN_DESCRIPCION));
+                    editTaskIntent.putExtra("audioPath", taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH));
                     editTaskLauncher.launch(editTaskIntent);
                 }
             } else if (selectedPositions.isEmpty()) {
-                Toast.makeText(MainActivity.this, "Selecciona una tarea para modificar", Toast.LENGTH_SHORT).show();
+                if (talkBackEnabled && tts != null) {
+                    tts.speak("Selecciona una tarea para modificar", TextToSpeech.QUEUE_FLUSH, null, null);
+                }
             } else {
-                Toast.makeText(MainActivity.this, "Selecciona solo una tarea para modificar", Toast.LENGTH_SHORT).show();
+                if (talkBackEnabled && tts != null) {
+                    tts.speak("Selecciona solo una tarea para modificar", TextToSpeech.QUEUE_FLUSH, null, null);
+                }
             }
         });
 
@@ -138,11 +176,7 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<Bundle> tasksToDelete = new ArrayList<>();
             for (int i = 0; i < checked.size(); i++) {
                 if (checked.valueAt(i)) {
-                    int position = checked.keyAt(i);
-                    Bundle taskBundle = tasksAdapter.getItem(position);
-                    if (taskBundle != null) {
-                        tasksToDelete.add(taskBundle);
-                    }
+                    tasksToDelete.add(tasksAdapter.getItem(checked.keyAt(i)));
                 }
             }
 
@@ -150,9 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 for (Bundle taskBundle : tasksToDelete) {
                     int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                     String audioPath = taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
-
                     dbHelper.eliminarTarea(taskId);
-
                     if (audioPath != null && !audioPath.isEmpty()) {
                         File audioFile = new File(audioPath);
                         if (audioFile.exists()) {
@@ -161,9 +193,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 loadTasks();
-                Toast.makeText(MainActivity.this, "Tareas eliminadas", Toast.LENGTH_SHORT).show();
+                String message = tasksToDelete.size() == 1 ? "1 tarea eliminada" : tasksToDelete.size() + " tareas eliminadas";
+                if (talkBackEnabled && tts != null) {
+                    tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, null);
+                }
             } else {
-                Toast.makeText(MainActivity.this, "Selecciona una o más tareas para eliminar", Toast.LENGTH_SHORT).show();
+                if (talkBackEnabled && tts != null) {
+                    tts.speak("Selecciona una o más tareas para eliminar", TextToSpeech.QUEUE_FLUSH, null, null);
+                }
             }
         });
 
@@ -175,6 +212,30 @@ public class MainActivity extends AppCompatActivity {
         tasksAdapter.clear();
         tasksAdapter.addAll(newTasks);
         listViewTasks.clearChoices();
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            Locale spanish = new Locale("es", "ES");
+            int result = tts.setLanguage(spanish);
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Toast.makeText(this, "El lenguaje español no es soportado", Toast.LENGTH_SHORT).show();
+            } else {
+                tts.speak("Bienvenido al gestor de tareas", TextToSpeech.QUEUE_FLUSH, null, null);
+            }
+        } else {
+            Toast.makeText(this, "Fallo al inicializar TextToSpeech", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
     }
 
     public class TareaAdapter extends ArrayAdapter<Bundle> {
