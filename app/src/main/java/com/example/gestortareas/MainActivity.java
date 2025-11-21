@@ -84,15 +84,16 @@ public class MainActivity extends AppCompatActivity {
         listViewTasks.setAdapter(tasksAdapter);
         listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
-        // Changed to OnItemClickListener for toggling task completion
-        listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
+        listViewTasks.setOnItemLongClickListener((parent, view, position, id) -> {
             Bundle taskBundle = tasksAdapter.getItem(position);
             if (taskBundle != null) {
                 int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                 boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
                 dbHelper.actualizarEstadoTarea(taskId, !isCompleted);
                 loadTasks();
+                return true;
             }
+            return false;
         });
 
         buttonAddTask.setOnClickListener(v -> {
@@ -173,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
         List<Bundle> newTasks = dbHelper.getTareasByUser(userId);
         tasksAdapter.clear();
         tasksAdapter.addAll(newTasks);
+        listViewTasks.clearChoices();
     }
 
     public class TareaAdapter extends ArrayAdapter<Bundle> {
@@ -202,9 +204,6 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 textView.setText(String.format("%s %s", statusText, taskText));
-
-                // Explicitly set the checked state of the view
-                textView.setChecked(isCompleted);
 
                 if (isCompleted) {
                     textView.setCheckMarkTintList(ColorStateList.valueOf(Color.GREEN));
