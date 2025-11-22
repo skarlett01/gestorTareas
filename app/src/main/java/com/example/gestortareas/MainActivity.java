@@ -7,13 +7,14 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.SparseBooleanArray;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckedTextView;
+import android.widget.CheckBox;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonDeleteTask;
     private DBHelper dbHelper;
     private int userId = 1;
+    private SparseBooleanArray selectedItems;
 
     private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -74,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        selectedItems = new SparseBooleanArray();
         dbHelper = new DBHelper(this);
         listViewTasks = findViewById(R.id.listViewTasks);
         buttonAddTask = findViewById(R.id.buttonAddTask);
@@ -82,7 +85,15 @@ public class MainActivity extends AppCompatActivity {
 
         tasksAdapter = new TareaAdapter(this, new ArrayList<>());
         listViewTasks.setAdapter(tasksAdapter);
-        listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+        listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
+            if (selectedItems.get(position, false)) {
+                selectedItems.delete(position);
+            } else {
+                selectedItems.put(position, true);
+            }
+            tasksAdapter.notifyDataSetChanged();
+        });
 
         listViewTasks.setOnItemLongClickListener((parent, view, position, id) -> {
             Bundle taskBundle = tasksAdapter.getItem(position);
@@ -102,11 +113,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         buttonModifyTask.setOnClickListener(v -> {
-            SparseBooleanArray checked = listViewTasks.getCheckedItemPositions();
             ArrayList<Integer> selectedPositions = new ArrayList<>();
-            for (int i = 0; i < checked.size(); i++) {
-                if (checked.valueAt(i)) {
-                    selectedPositions.add(checked.keyAt(i));
+            for (int i = 0; i < selectedItems.size(); i++) {
+                if (selectedItems.valueAt(i)) {
+                    selectedPositions.add(selectedItems.keyAt(i));
                 }
             }
 
@@ -134,11 +144,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         buttonDeleteTask.setOnClickListener(v -> {
-            SparseBooleanArray checked = listViewTasks.getCheckedItemPositions();
             ArrayList<Bundle> tasksToDelete = new ArrayList<>();
-            for (int i = 0; i < checked.size(); i++) {
-                if (checked.valueAt(i)) {
-                    int position = checked.keyAt(i);
+            for (int i = 0; i < selectedItems.size(); i++) {
+                if (selectedItems.valueAt(i)) {
+                    int position = selectedItems.keyAt(i);
                     Bundle taskBundle = tasksAdapter.getItem(position);
                     if (taskBundle != null) {
                         tasksToDelete.add(taskBundle);
@@ -174,20 +183,48 @@ public class MainActivity extends AppCompatActivity {
         List<Bundle> newTasks = dbHelper.getTareasByUser(userId);
         tasksAdapter.clear();
         tasksAdapter.addAll(newTasks);
-        listViewTasks.clearChoices();
+        selectedItems.clear();
+    }
+
+    private static class ViewHolder {
+        CheckBox checkBox;
+        TextView textView;
     }
 
     public class TareaAdapter extends ArrayAdapter<Bundle> {
 
         public TareaAdapter(Context context, List<Bundle> tasks) {
-            super(context, R.layout.list_item_tarea, R.id.checkedTextView, tasks);
+            super(context, 0, tasks);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            Bundle taskBundle = getItem(position);
+            if (taskBundle != null) {
+                return taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
+            }
+            return -1;
+        }
+
+        @Override
+        public boolean hasStableIds() {
+            return true;
         }
 
         @NonNull
         @Override
         public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-            View view = super.getView(position, convertView, parent);
-            CheckedTextView textView = view.findViewById(R.id.checkedTextView);
+            ViewHolder holder;
+
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_tarea, parent, false);
+                holder = new ViewHolder();
+                holder.checkBox = convertView.findViewById(R.id.task_checkbox);
+                holder.textView = convertView.findViewById(R.id.task_text);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
 
             Bundle taskBundle = getItem(position);
 
@@ -203,16 +240,24 @@ public class MainActivity extends AppCompatActivity {
                     taskText += ": " + description;
                 }
 
-                textView.setText(String.format("%s %s", statusText, taskText));
+                holder.textView.setText(String.format("%s %s", statusText, taskText));
+                holder.checkBox.setChecked(isCompleted);
 
+                // This ensures the checkbox has a visible color for its state.
                 if (isCompleted) {
-                    textView.setCheckMarkTintList(ColorStateList.valueOf(Color.GREEN));
+                    holder.checkBox.setButtonTintList(ColorStateList.valueOf(Color.GREEN));
                 } else {
-                    textView.setCheckMarkTintList(ColorStateList.valueOf(Color.YELLOW));
+                    holder.checkBox.setButtonTintList(ColorStateList.valueOf(Color.GRAY));
+                }
+
+                if (selectedItems.get(position, false)) {
+                    convertView.setBackgroundColor(Color.LTGRAY);
+                } else {
+                    convertView.setBackgroundColor(Color.TRANSPARENT);
                 }
             }
 
-            return view;
+            return convertView;
         }
     }
 }
