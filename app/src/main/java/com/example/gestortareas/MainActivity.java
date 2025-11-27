@@ -6,14 +6,15 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.util.SparseBooleanArray;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckedTextView;
+import android.widget.CheckBox;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -24,12 +25,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import Data.DBHelper;
 import Data.TareaContract;
 
-public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
+public class MainActivity extends AppCompatActivity {
 
     private TareaAdapter tasksAdapter;
     private ListView listViewTasks;
@@ -38,8 +38,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     private Button buttonDeleteTask;
     private DBHelper dbHelper;
     private int userId = 1;
-    private TextToSpeech tts;
-    private boolean talkBackEnabled;
+    private SparseBooleanArray selectedItems;
 
     private final ActivityResultLauncher<Intent> createTaskLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -51,9 +50,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     String audioPath = data.getStringExtra("audioPath");
                     if (taskName != null) {
                         dbHelper.crearTarea(taskName, taskDescription, userId, audioPath);
-                        if (talkBackEnabled && tts != null) {
-                            tts.speak("Tarea " + taskName + " creada.", TextToSpeech.QUEUE_ADD, null, null);
-                        }
                         loadTasks();
                     }
                 }
@@ -70,9 +66,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     String audioPath = data.getStringExtra("audioPath");
                     if (taskId != -1 && taskName != null) {
                         dbHelper.actualizarTarea(taskId, taskName, taskDescription, audioPath);
-                        if (talkBackEnabled && tts != null) {
-                            tts.speak("Tarea " + taskName + " actualizada.", TextToSpeech.QUEUE_ADD, null, null);
-                        }
                         loadTasks();
                     }
                 }
@@ -83,11 +76,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        talkBackEnabled = getIntent().getBooleanExtra("talkBackEnabled", false);
-        if (talkBackEnabled) {
-            tts = new TextToSpeech(this, this);
-        }
-
+        selectedItems = new SparseBooleanArray();
         dbHelper = new DBHelper(this);
         listViewTasks = findViewById(R.id.listViewTasks);
         buttonAddTask = findViewById(R.id.buttonAddTask);
@@ -96,18 +85,14 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
 
         tasksAdapter = new TareaAdapter(this, new ArrayList<>());
         listViewTasks.setAdapter(tasksAdapter);
-        listViewTasks.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
         listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
-            if (talkBackEnabled && tts != null) {
-                Bundle taskBundle = tasksAdapter.getItem(position);
-                if (taskBundle != null) {
-                    String taskTitle = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
-                    boolean isSelected = listViewTasks.isItemChecked(position);
-                    String selectionMessage = isSelected ? " seleccionada." : " deseleccionada.";
-                    tts.speak(taskTitle + selectionMessage, TextToSpeech.QUEUE_FLUSH, null, null);
-                }
+            if (selectedItems.get(position, false)) {
+                selectedItems.delete(position);
+            } else {
+                selectedItems.put(position, true);
             }
+            tasksAdapter.notifyDataSetChanged();
         });
 
         listViewTasks.setOnItemLongClickListener((parent, view, position, id) -> {
@@ -116,13 +101,6 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                 boolean isCompleted = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID_ESTADO) == 2;
                 dbHelper.actualizarEstadoTarea(taskId, !isCompleted);
-
-                if (talkBackEnabled && tts != null) {
-                    String statusMessage = !isCompleted ? " marcada como completada." : " marcada como pendiente.";
-                    String title = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
-                    tts.speak(title + statusMessage, TextToSpeech.QUEUE_FLUSH, null, null);
-                }
-
                 loadTasks();
                 return true;
             }
@@ -130,19 +108,15 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         });
 
         buttonAddTask.setOnClickListener(v -> {
-            if (talkBackEnabled && tts != null) {
-                tts.speak("Abriendo pantalla para crear tarea", TextToSpeech.QUEUE_FLUSH, null, null);
-            }
             Intent createTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
             createTaskLauncher.launch(createTaskIntent);
         });
 
         buttonModifyTask.setOnClickListener(v -> {
-            SparseBooleanArray checked = listViewTasks.getCheckedItemPositions();
             ArrayList<Integer> selectedPositions = new ArrayList<>();
-            for (int i = 0; i < checked.size(); i++) {
-                if (checked.valueAt(i)) {
-                    selectedPositions.add(checked.keyAt(i));
+            for (int i = 0; i < selectedItems.size(); i++) {
+                if (selectedItems.valueAt(i)) {
+                    selectedPositions.add(selectedItems.keyAt(i));
                 }
             }
 
@@ -150,33 +124,34 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 int position = selectedPositions.get(0);
                 Bundle taskBundle = tasksAdapter.getItem(position);
                 if (taskBundle != null) {
-                    if (talkBackEnabled && tts != null) {
-                        tts.speak("Abriendo pantalla para modificar tarea", TextToSpeech.QUEUE_FLUSH, null, null);
-                    }
+                    int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
+                    String taskTitle = taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO);
+                    String taskDescription = taskBundle.getString(TareaContract.TareaEntry.COLUMN_DESCRIPCION);
+                    String audioPath = taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
+
                     Intent editTaskIntent = new Intent(MainActivity.this, PantallaCrearTarea.class);
-                    editTaskIntent.putExtra("taskId", taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID));
-                    editTaskIntent.putExtra("taskName", taskBundle.getString(TareaContract.TareaEntry.COLUMN_TITULO));
-                    editTaskIntent.putExtra("taskDescription", taskBundle.getString(TareaContract.TareaEntry.COLUMN_DESCRIPCION));
-                    editTaskIntent.putExtra("audioPath", taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH));
+                    editTaskIntent.putExtra("taskId", taskId);
+                    editTaskIntent.putExtra("taskName", taskTitle);
+                    editTaskIntent.putExtra("taskDescription", taskDescription);
+                    editTaskIntent.putExtra("audioPath", audioPath);
                     editTaskLauncher.launch(editTaskIntent);
                 }
             } else if (selectedPositions.isEmpty()) {
-                if (talkBackEnabled && tts != null) {
-                    tts.speak("Selecciona una tarea para modificar", TextToSpeech.QUEUE_FLUSH, null, null);
-                }
+                Toast.makeText(MainActivity.this, "Selecciona una tarea para modificar", Toast.LENGTH_SHORT).show();
             } else {
-                if (talkBackEnabled && tts != null) {
-                    tts.speak("Selecciona solo una tarea para modificar", TextToSpeech.QUEUE_FLUSH, null, null);
-                }
+                Toast.makeText(MainActivity.this, "Selecciona solo una tarea para modificar", Toast.LENGTH_SHORT).show();
             }
         });
 
         buttonDeleteTask.setOnClickListener(v -> {
-            SparseBooleanArray checked = listViewTasks.getCheckedItemPositions();
             ArrayList<Bundle> tasksToDelete = new ArrayList<>();
-            for (int i = 0; i < checked.size(); i++) {
-                if (checked.valueAt(i)) {
-                    tasksToDelete.add(tasksAdapter.getItem(checked.keyAt(i)));
+            for (int i = 0; i < selectedItems.size(); i++) {
+                if (selectedItems.valueAt(i)) {
+                    int position = selectedItems.keyAt(i);
+                    Bundle taskBundle = tasksAdapter.getItem(position);
+                    if (taskBundle != null) {
+                        tasksToDelete.add(taskBundle);
+                    }
                 }
             }
 
@@ -184,7 +159,9 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                 for (Bundle taskBundle : tasksToDelete) {
                     int taskId = taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
                     String audioPath = taskBundle.getString(TareaContract.TareaEntry.COLUMN_AUDIO_PATH);
+
                     dbHelper.eliminarTarea(taskId);
+
                     if (audioPath != null && !audioPath.isEmpty()) {
                         File audioFile = new File(audioPath);
                         if (audioFile.exists()) {
@@ -193,14 +170,9 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     }
                 }
                 loadTasks();
-                String message = tasksToDelete.size() == 1 ? "1 tarea eliminada" : tasksToDelete.size() + " tareas eliminadas";
-                if (talkBackEnabled && tts != null) {
-                    tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, null);
-                }
+                Toast.makeText(MainActivity.this, "Tareas eliminadas", Toast.LENGTH_SHORT).show();
             } else {
-                if (talkBackEnabled && tts != null) {
-                    tts.speak("Selecciona una o más tareas para eliminar", TextToSpeech.QUEUE_FLUSH, null, null);
-                }
+                Toast.makeText(MainActivity.this, "Selecciona una o más tareas para eliminar", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -211,44 +183,48 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
         List<Bundle> newTasks = dbHelper.getTareasByUser(userId);
         tasksAdapter.clear();
         tasksAdapter.addAll(newTasks);
-        listViewTasks.clearChoices();
+        selectedItems.clear();
     }
 
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            Locale spanish = new Locale("es", "ES");
-            int result = tts.setLanguage(spanish);
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Toast.makeText(this, "El lenguaje español no es soportado", Toast.LENGTH_SHORT).show();
-            } else {
-                tts.speak("Bienvenido al gestor de tareas", TextToSpeech.QUEUE_FLUSH, null, null);
-            }
-        } else {
-            Toast.makeText(this, "Fallo al inicializar TextToSpeech", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        super.onDestroy();
+    private static class ViewHolder {
+        CheckBox checkBox;
+        TextView textView;
     }
 
     public class TareaAdapter extends ArrayAdapter<Bundle> {
 
         public TareaAdapter(Context context, List<Bundle> tasks) {
-            super(context, R.layout.list_item_tarea, R.id.checkedTextView, tasks);
+            super(context, 0, tasks);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            Bundle taskBundle = getItem(position);
+            if (taskBundle != null) {
+                return taskBundle.getInt(TareaContract.TareaEntry.COLUMN_ID);
+            }
+            return -1;
+        }
+
+        @Override
+        public boolean hasStableIds() {
+            return true;
         }
 
         @NonNull
         @Override
         public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-            View view = super.getView(position, convertView, parent);
-            CheckedTextView textView = view.findViewById(R.id.checkedTextView);
+            ViewHolder holder;
+
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_tarea, parent, false);
+                holder = new ViewHolder();
+                holder.checkBox = convertView.findViewById(R.id.task_checkbox);
+                holder.textView = convertView.findViewById(R.id.task_text);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
 
             Bundle taskBundle = getItem(position);
 
@@ -264,16 +240,24 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
                     taskText += ": " + description;
                 }
 
-                textView.setText(String.format("%s %s", statusText, taskText));
+                holder.textView.setText(String.format("%s %s", statusText, taskText));
+                holder.checkBox.setChecked(isCompleted);
 
+                // This ensures the checkbox has a visible color for its state.
                 if (isCompleted) {
-                    textView.setCheckMarkTintList(ColorStateList.valueOf(Color.GREEN));
+                    holder.checkBox.setButtonTintList(ColorStateList.valueOf(Color.GREEN));
                 } else {
-                    textView.setCheckMarkTintList(ColorStateList.valueOf(Color.YELLOW));
+                    holder.checkBox.setButtonTintList(ColorStateList.valueOf(Color.GRAY));
+                }
+
+                if (selectedItems.get(position, false)) {
+                    convertView.setBackgroundColor(Color.LTGRAY);
+                } else {
+                    convertView.setBackgroundColor(Color.TRANSPARENT);
                 }
             }
 
-            return view;
+            return convertView;
         }
     }
 }
