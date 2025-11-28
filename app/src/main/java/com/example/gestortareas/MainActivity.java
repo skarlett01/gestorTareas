@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonModifyTask;
     private Button buttonDeleteTask;
     private ImageButton profileButton;
+    private ImageButton settingsButton;
     private DBHelper dbHelper;
     private int userId = 1;
     private SparseBooleanArray selectedItems;
@@ -85,12 +86,18 @@ public class MainActivity extends AppCompatActivity {
         buttonModifyTask = findViewById(R.id.buttonModifyTask);
         buttonDeleteTask = findViewById(R.id.buttonDeleteTask);
         profileButton = findViewById(R.id.profileButton);
+        settingsButton = findViewById(R.id.settingsButton);
 
         tasksAdapter = new TareaAdapter(this, new ArrayList<>());
         listViewTasks.setAdapter(tasksAdapter);
 
         profileButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, PerfilUsuarioActivity.class);
+            startActivity(intent);
+        });
+
+        settingsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, configuracion.class);
             startActivity(intent);
         });
 

@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GestorTareas">
         <activity
-            android:name=".modificar_perfil"
+            android:name=".ModificarUsuarioActivity"
             android:exported="false" />
         <activity
             android:name=".configuracion"

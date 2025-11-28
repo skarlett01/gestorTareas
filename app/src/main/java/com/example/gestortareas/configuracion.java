@@ -1,24 +1,41 @@
 package com.example.gestortareas;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.ImageButton;
+import android.widget.Switch;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class configuracion extends AppCompatActivity {
+
+    private Switch switchTalkback;
+    private ImageButton backButton;
+    private static final String PREFS_NAME = "prefs";
+    private static final String TALKBACK_ENABLED = "talkback_enabled";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_configuracion);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+        switchTalkback = findViewById(R.id.switchTalkback);
+        backButton = findViewById(R.id.backButton);
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean talkbackEnabled = prefs.getBoolean(TALKBACK_ENABLED, false);
+        switchTalkback.setChecked(talkbackEnabled);
+
+        switchTalkback.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit();
+            editor.putBoolean(TALKBACK_ENABLED, isChecked);
+            editor.apply();
+        });
+
+        backButton.setOnClickListener(v -> {
+            finish();
         });
     }
 }

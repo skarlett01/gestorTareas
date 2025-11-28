@@ -13,7 +13,7 @@ import java.util.List;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "tareas.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 4;
 
     private static final String CREATE_TABLE_ESTADO_TAREA = "create table " + TareaContract.EstadoTareaEntry.TABLE_ESTADO_TAREA + "("
             + TareaContract.EstadoTareaEntry.COLUMN_ID_ESTADO + " integer primary key autoincrement, "
@@ -23,8 +23,11 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String CREATE_TABLE_USUARIO = "create table " + TareaContract.UsuarioEntry.TABLE_USUARIO + "("
             + TareaContract.UsuarioEntry.COLUMN_ID_USUARIO + " integer primary key autoincrement, "
             + TareaContract.UsuarioEntry.COLUMN_NOMBRE + " text not null, "
+            + TareaContract.UsuarioEntry.COLUMN_APELLIDO + " text, "
+            + TareaContract.UsuarioEntry.COLUMN_USERNAME + " text, "
             + TareaContract.UsuarioEntry.COLUMN_CORREO + " text not null, "
-            + TareaContract.UsuarioEntry.COLUMN_CONTRASENA + " text not null);";
+            + TareaContract.UsuarioEntry.COLUMN_CONTRASENA + " text not null, "
+            + TareaContract.UsuarioEntry.COLUMN_PROFILE_IMAGE_PATH + " text);";
 
     private static final String CREATE_TABLE_TAREA = "create table "
             + TareaContract.TareaEntry.TABLE_TAREA + "("
@@ -53,6 +56,13 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE " + TareaContract.TareaEntry.TABLE_TAREA + " ADD COLUMN " + TareaContract.TareaEntry.COLUMN_AUDIO_PATH + " TEXT;");
         }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE " + TareaContract.UsuarioEntry.TABLE_USUARIO + " ADD COLUMN " + TareaContract.UsuarioEntry.COLUMN_PROFILE_IMAGE_PATH + " TEXT;");
+        }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE " + TareaContract.UsuarioEntry.TABLE_USUARIO + " ADD COLUMN " + TareaContract.UsuarioEntry.COLUMN_APELLIDO + " TEXT;");
+            db.execSQL("ALTER TABLE " + TareaContract.UsuarioEntry.TABLE_USUARIO + " ADD COLUMN " + TareaContract.UsuarioEntry.COLUMN_USERNAME + " TEXT;");
+        }
     }
 
     public long crearUsuario(String nombre, String correo, String contrasena) {
@@ -62,6 +72,37 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put(TareaContract.UsuarioEntry.COLUMN_CORREO, correo);
         values.put(TareaContract.UsuarioEntry.COLUMN_CONTRASENA, contrasena);
         return db.insert(TareaContract.UsuarioEntry.TABLE_USUARIO, null, values);
+    }
+
+    public int actualizarUsuario(int idUsuario, String nombre, String apellido, String username, String profileImagePath) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(TareaContract.UsuarioEntry.COLUMN_NOMBRE, nombre);
+        values.put(TareaContract.UsuarioEntry.COLUMN_APELLIDO, apellido);
+        values.put(TareaContract.UsuarioEntry.COLUMN_USERNAME, username);
+        if (profileImagePath != null) {
+            values.put(TareaContract.UsuarioEntry.COLUMN_PROFILE_IMAGE_PATH, profileImagePath);
+        }
+        return db.update(TareaContract.UsuarioEntry.TABLE_USUARIO, values, TareaContract.UsuarioEntry.COLUMN_ID_USUARIO + " = ?", new String[]{String.valueOf(idUsuario)});
+    }
+
+    public Bundle getUsuario(int idUsuario) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Bundle userBundle = null;
+        try (Cursor cursor = db.query(TareaContract.UsuarioEntry.TABLE_USUARIO, null,
+                TareaContract.UsuarioEntry.COLUMN_ID_USUARIO + " = ?",
+                new String[]{String.valueOf(idUsuario)}, null, null, null)) {
+
+            if (cursor.moveToFirst()) {
+                userBundle = new Bundle();
+                userBundle.putInt(TareaContract.UsuarioEntry.COLUMN_ID_USUARIO, cursor.getInt(cursor.getColumnIndexOrThrow(TareaContract.UsuarioEntry.COLUMN_ID_USUARIO)));
+                userBundle.putString(TareaContract.UsuarioEntry.COLUMN_NOMBRE, cursor.getString(cursor.getColumnIndexOrThrow(TareaContract.UsuarioEntry.COLUMN_NOMBRE)));
+                userBundle.putString(TareaContract.UsuarioEntry.COLUMN_APELLIDO, cursor.getString(cursor.getColumnIndexOrThrow(TareaContract.UsuarioEntry.COLUMN_APELLIDO)));
+                userBundle.putString(TareaContract.UsuarioEntry.COLUMN_USERNAME, cursor.getString(cursor.getColumnIndexOrThrow(TareaContract.UsuarioEntry.COLUMN_USERNAME)));
+                userBundle.putString(TareaContract.UsuarioEntry.COLUMN_PROFILE_IMAGE_PATH, cursor.getString(cursor.getColumnIndexOrThrow(TareaContract.UsuarioEntry.COLUMN_PROFILE_IMAGE_PATH)));
+            }
+        }
+        return userBundle;
     }
 
     public long crearTarea(String titulo, String descripcion, int idUsuario, String audioPath) {

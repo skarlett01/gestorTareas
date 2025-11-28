@@ -26,7 +26,10 @@ public final class TareaContract {
         public static final String TABLE_USUARIO = "usuario";
         public static final String COLUMN_ID_USUARIO = "id_usuario";
         public static final String COLUMN_NOMBRE = "nombre";
+        public static final String COLUMN_APELLIDO = "apellido";
+        public static final String COLUMN_USERNAME = "username";
         public static final String COLUMN_CORREO = "correo";
         public static final String COLUMN_CONTRASENA = "contrasena";
+        public static final String COLUMN_PROFILE_IMAGE_PATH = "profile_image_path";
     }
 }

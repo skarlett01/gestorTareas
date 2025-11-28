@@ -10,6 +10,15 @@
     tools:context=".MainActivity">
 
     <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_manage"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:contentDescription="Settings" />
+
+    <ImageButton
         android:id="@+id/profileButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
