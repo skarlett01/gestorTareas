@@ -71,10 +71,11 @@ public class ModificarUsuarioActivity extends AppCompatActivity {
             }
 
             String imagePath = (selectedImageUri != null) ? selectedImageUri.toString() : getImagePathFromDatabase();
-            
+
             try {
                 dbHelper.actualizarUsuario(userId, name, lastName, username, imagePath);
                 Toast.makeText(this, "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
                 finish();
             } catch (Exception e) {
                 Toast.makeText(this, "Error al actualizar el perfil", Toast.LENGTH_SHORT).show();
@@ -90,7 +91,7 @@ public class ModificarUsuarioActivity extends AppCompatActivity {
             usernameEditText.setText(user.getString(TareaContract.UsuarioEntry.COLUMN_USERNAME));
 
             String imagePath = user.getString(TareaContract.UsuarioEntry.COLUMN_PROFILE_IMAGE_PATH);
-            if (imagePath != null) {
+            if (imagePath != null && !imagePath.isEmpty()) {
                 selectedImageUri = Uri.parse(imagePath);
                 Glide.with(this).load(selectedImageUri).into(profileImageView);
             }

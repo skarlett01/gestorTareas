@@ -32,6 +32,7 @@ import Data.TareaContract;
 
 public class MainActivity extends AppCompatActivity {
 
+    // Nuevos botones de configuracion y perfil
     private TareaAdapter tasksAdapter;
     private ListView listViewTasks;
     private Button buttonAddTask;

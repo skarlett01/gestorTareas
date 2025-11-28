@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class configuracion extends AppCompatActivity {
 
+    //Nueva vista de configuracion ya configurada con talkback
     private Switch switchTalkback;
     private ImageButton backButton;
     private static final String PREFS_NAME = "prefs";
