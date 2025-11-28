@@ -9,6 +9,15 @@
     android:padding="16dp"
     tools:context=".MainActivity">
 
+    <ImageButton
+        android:id="@+id/profileButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@android:drawable/ic_menu_myplaces"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="User Profile" />
+
     <TextView
         android:id="@+id/textView3"
         android:layout_width="wrap_content"

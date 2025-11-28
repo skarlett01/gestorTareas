@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonAddTask;
     private Button buttonModifyTask;
     private Button buttonDeleteTask;
+    private ImageButton profileButton;
     private DBHelper dbHelper;
     private int userId = 1;
     private SparseBooleanArray selectedItems;
@@ -82,9 +84,15 @@ public class MainActivity extends AppCompatActivity {
         buttonAddTask = findViewById(R.id.buttonAddTask);
         buttonModifyTask = findViewById(R.id.buttonModifyTask);
         buttonDeleteTask = findViewById(R.id.buttonDeleteTask);
+        profileButton = findViewById(R.id.profileButton);
 
         tasksAdapter = new TareaAdapter(this, new ArrayList<>());
         listViewTasks.setAdapter(tasksAdapter);
+
+        profileButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, PerfilUsuarioActivity.class);
+            startActivity(intent);
+        });
 
         listViewTasks.setOnItemClickListener((parent, view, position, id) -> {
             if (selectedItems.get(position, false)) {
